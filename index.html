@@ -636,6 +636,18 @@
             host.appendChild(node); recalcAll();
         }
 
+         function addAmmoRow(data = {}) {
+            const host = $('#ammo');
+            const node = document.importNode($('#ammoRowTpl').content, true);
+            const row = node.firstElementChild;
+            row.querySelector('.ammo-name').value = data.name || '';
+            row.querySelector('.ammo-qty').value = data.qty ?? 20;
+            row.querySelector('.ammo-notes').value = data.notes || '';
+            ['input', 'change'].forEach(ev => ['.ammo-name', '.ammo-qty', '.ammo-notes']
+                .forEach(sel => row.querySelector(sel).addEventListener(ev, save)));
+            host.appendChild(node);
+        }
+
         function addSpellRow(data = {}) {
             const host = $('#spells');
             const node = document.importNode($('#spellRowTpl').content, true);
@@ -680,17 +692,7 @@
             host.appendChild(node);
         }
 
-        function addAmmoRow(data = {}) {
-            const host = $('#ammo');
-            const node = document.importNode($('#ammoRowTpl').content, true);
-            const row = node.firstElementChild;
-            row.querySelector('.ammo-name').value = data.name || '';
-            row.querySelector('.ammo-qty').value = data.qty ?? 20;
-            row.querySelector('.ammo-notes').value = data.notes || '';
-            ['input', 'change'].forEach(ev => ['.ammo-name', '.ammo-qty', '.ammo-notes']
-                .forEach(sel => row.querySelector(sel).addEventListener(ev, save)));
-            host.appendChild(node);
-        }
+       
 
         /* ---------- Calculations ---------- */
         function recalcAll() {
