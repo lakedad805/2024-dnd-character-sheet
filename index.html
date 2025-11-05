@@ -201,16 +201,23 @@
 
             <!-- Core -->
             <section class="grid md:grid-cols-4 gap-4">
-                <!-- Abilities -->
-                <div class="md:col-span-2 grid grid-cols-6 gap-3">
+                <!-- Abilities (3×2 on mobile, 6×1 on md+) -->
+                <div class="md:col-span-2 card">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-semibold">Ability Scores</h3>
+                        <!-- optional: small note or reset button could go here -->
+                    </div>
+
                     <template id="abilityCardTpl">
-                        <div class="card text-center">
+                        <div class="card text-center p-2">
                             <div class="field-label abbr !mb-1">STR</div>
                             <input type="number" class="score text-center font-semibold" value="10" />
                             <div class="text-xs text-slate-600 mt-1">mod <span class="mod font-medium">+0</span></div>
                         </div>
                     </template>
-                    <div id="abilities" class="contents"></div>
+
+                    <!-- 3 columns on mobile, 6 columns from md up -->
+                    <div id="abilities" class="grid grid-cols-3 md:grid-cols-6 gap-3"></div>
                 </div>
 
                 <!-- PB / AC / Init / HP -->
