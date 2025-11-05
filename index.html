@@ -821,8 +821,8 @@
                 if (s) { $(`#skill_prof_${key}`).checked = !!s.prof; $(`#skill_exp_${key}`).checked = !!s.exp; }
             });
             $('#attacks').innerHTML = ''; (obj.attacks || []).forEach(addAttackRow);
-            $('#spells').innerHTML = ''; (obj.spells || []).forEach(addSpellRow);
             $('#ammo').innerHTML = ''; (obj.ammo || []).forEach(addAmmoRow);
+            $('#spells').innerHTML = ''; (obj.spells || []).forEach(addSpellRow);
             $('#resources').innerHTML = ''; (obj.resources || []).forEach(addResourceRow);
             $('#features').value = obj.features || ''; $('#equipment').value = obj.equipment || ''; $('#notes').value = obj.notes || '';
             recalcAll();
