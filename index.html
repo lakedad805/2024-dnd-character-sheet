@@ -372,8 +372,12 @@
             <!-- Features & Resources -->
             <section class="grid md:grid-cols-2 gap-4">
                 <div>
-                    <h2 class="text-lg font-semibold mb-2">Features & Traits</h2>
-                    <textarea id="features"></textarea>
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold">Features & Traits</h2>
+                        <button id="addFeature"
+                            class="no-print px-3 py-1.5 rounded-lg bg-slate-900 text-white">Add</button>
+                    </div>
+                    <div id="featuresList" class="mt-2 space-y-2"></div>
                 </div>
                 <div>
                     <div class="flex items-center justify-between">
@@ -582,6 +586,26 @@
         </div>
     </template>
 
+    <template id="featureRowTpl">
+        <div class="border rounded-xl p-2 feature-row">
+            <div class="grid md:grid-cols-8 gap-2 items-start">
+                <div class="md:col-span-2">
+                    <label class="field-label">Name</label>
+                    <input class="feat-name border rounded px-2 py-1" placeholder="Second Wind" />
+                </div>
+                <div class="md:col-span-5">
+                    <label class="field-label">Description</label>
+                    <textarea class="feat-notes auto-grow border rounded p-2 placeholder:text-sm"
+                        placeholder="What it does, scaling, riders, recharge, etc."></textarea>
+                </div>
+                <div class="no-print flex items-end justify-end">
+                    <button class="feat-delete px-3 py-1.5 rounded-lg bg-slate-200">Delete</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+
     <script>
         const LS_KEY = 'minimal_dnd2024_sheet_v2';
         const abilOrder = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
@@ -722,6 +746,24 @@
             });
             ['input', 'change'].forEach(ev => ['.res-name', '.res-cur', '.res-max', '.res-recharge']
                 .forEach(sel => row.querySelector(sel).addEventListener(ev, save)));
+            host.appendChild(node);
+        }
+
+        function addFeatureRow(data = {}) {
+            const host = document.querySelector('#featuresList');
+            const node = document.importNode(document.querySelector('#featureRowTpl').content, true);
+            const row = node.firstElementChild;
+
+            row.querySelector('.feat-name').value = data.name || '';
+            row.querySelector('.feat-notes').value = data.notes || '';
+
+            // Persist on change
+            ['input', 'change'].forEach(ev => {
+                row.querySelectorAll('.feat-name, .feat-notes').forEach(el => {
+                    el.addEventListener(ev, () => save(false));
+                });
+            });
+
             host.appendChild(node);
         }
 
@@ -880,52 +922,99 @@
         }
 
         function wireBasics() {
-            ['#name', '#class', '#level', '#background', '#species', '#player', '#alignment', '#ac', '#speed',
-                '#hpMax', '#hpCur', '#hpTemp', '#features', '#equipment', '#notes', '#initMisc', '#inspiration']
-                .forEach(sel => $(sel).addEventListener('input', () => { if (sel === '#level') recalcAll(); else save(); }));
+            // Autosave most fields; recalc on level changes
+            [
+                '#name', '#class', '#level', '#background', '#species', '#player', '#alignment',
+                '#ac', '#speed', '#hpMax', '#hpCur', '#hpTemp', '#equipment', '#notes',
+                '#initMisc', '#inspiration'
+            ].forEach(sel => {
+                const el = $(sel);
+                if (!el) return;
+                el.addEventListener('input', () => {
+                    if (sel === '#level') recalcAll();
+                    else save(false);
+                });
+            });
 
-            $('#level').addEventListener('change', recalcAll);
-            $('#saveBtn').addEventListener('click', () => save(true));
-            $('#resetBtn').addEventListener('click', () => { localStorage.removeItem(LS_KEY); location.reload(); });
-            $('#exportBtn').addEventListener('click', () => {
+            $('#level')?.addEventListener('change', recalcAll);
+
+            // Core actions
+            $('#saveBtn')?.addEventListener('click', () => save(true));
+            $('#resetBtn')?.addEventListener('click', () => { localStorage.removeItem(LS_KEY); location.reload(); });
+
+            // Export
+            $('#exportBtn')?.addEventListener('click', () => {
                 const data = JSON.stringify(serialize(), null, 2);
                 const blob = new Blob([data], { type: 'application/json' });
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-                a.download = `${($('#name').value || 'character').replace(/\s+/g, '_')}.json`; a.click(); URL.revokeObjectURL(a.href);
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `${($('#name').value || 'character').replace(/\s+/g, '_')}.json`;
+                a.click();
+                URL.revokeObjectURL(a.href);
             });
-            $('#importFile').addEventListener('change', (e) => {
-                const file = e.target.files[0]; if (!file) return;
+
+            // Import
+            $('#importFile')?.addEventListener('change', (e) => {
+                const file = e.target.files?.[0]; if (!file) return;
                 const r = new FileReader();
-                r.onload = () => { try { hydrate(JSON.parse(r.result)); save(); toast('Imported'); } catch (err) { alert('Invalid JSON.'); } };
+                r.onload = () => {
+                    try { hydrate(JSON.parse(r.result)); save(); toast('Imported'); }
+                    catch { alert('Invalid JSON.'); }
+                };
                 r.readAsText(file);
             });
 
-            $('#addAttack').addEventListener('click', () => addAttackRow());
-            $('#addSpell').addEventListener('click', () => addSpellRow());
-            $('#addAmmo').addEventListener('click', () => addAmmoRow());
-            $('#addResource').addEventListener('click', () => addResourceRow());
-            document.getElementById('spellAtk').addEventListener('input', () => { recalcSpellcasting(); save(false); });
-            document.getElementById('spellDC').addEventListener('input', () => { recalcSpellcasting(); save(false); });
+            // Row adders
+            $('#addAttack')?.addEventListener('click', () => addAttackRow());
+            $('#addSpell')?.addEventListener('click', () => addSpellRow());
+            $('#addAmmo')?.addEventListener('click', () => addAmmoRow());
+            $('#addResource')?.addEventListener('click', () => addResourceRow());
+            $('#addFeature')?.addEventListener('click', () => addFeatureRow());
+
+            // Spell globals
+            document.getElementById('spellAtk')?.addEventListener('input', () => { recalcSpellcasting(); save(false); });
+            document.getElementById('spellDC')?.addEventListener('input', () => { recalcSpellcasting(); save(false); });
         }
 
         function wireDelegates() {
-            $('#attacks').addEventListener('click', e => {
+            // Attacks delete
+            $('#attacks')?.addEventListener('click', e => {
                 const btn = e.target.closest('.atk-delete'); if (!btn) return;
                 const row = btn.closest('.card, .border'); if (row) { row.remove(); save(); }
             });
-            $('#spells').addEventListener('click', e => {
+
+            // Spells delete
+            $('#spells')?.addEventListener('click', e => {
                 const btn = e.target.closest('.spl-delete'); if (!btn) return;
                 const row = btn.closest('.card, .border'); if (row) { row.remove(); save(); }
             });
-            $('#resources').addEventListener('click', e => {
+
+            // Resources delete
+            $('#resources')?.addEventListener('click', e => {
                 const btn = e.target.closest('.res-delete'); if (!btn) return;
                 const row = btn.closest('.card, .border'); if (row) { row.remove(); save(); }
             });
-            $('#ammo').addEventListener('click', e => {
+
+            // Ammo controls
+            $('#ammo')?.addEventListener('click', e => {
                 const row = e.target.closest('.ammo-row'); if (!row) return;
                 if (e.target.closest('.ammo-delete')) { row.remove(); save(); return; }
-                if (e.target.closest('.ammo-dec')) { const q = row.querySelector('.ammo-qty'); q.value = Math.max(0, Number(q.value || 0) - 1); save(false); }
-                if (e.target.closest('.ammo-inc')) { const q = row.querySelector('.ammo-qty'); q.value = Number(q.value || 0) + 1; save(false); }
+                if (e.target.closest('.ammo-dec')) {
+                    const q = row.querySelector('.ammo-qty');
+                    q.value = Math.max(0, Number(q.value || 0) - 1);
+                    save(false);
+                }
+                if (e.target.closest('.ammo-inc')) {
+                    const q = row.querySelector('.ammo-qty');
+                    q.value = Number(q.value || 0) + 1;
+                    save(false);
+                }
+            });
+
+            // Features delete
+            document.getElementById('featuresList')?.addEventListener('click', e => {
+                const btn = e.target.closest('.feat-delete'); if (!btn) return;
+                const row = btn.closest('.feature-row'); if (row) { row.remove(); save(false); }
             });
         }
 
@@ -935,15 +1024,23 @@
 
             if ($$('#attacks > .card, #attacks > .border').length === 0)
                 addAttackRow({ name: 'Weapon', ability: 'STR', prof: true, dice: '1d8', dmgAbil: true });
+
             if ($$('#ammo > .ammo-row').length === 0)
                 addAmmoRow({ name: 'Arrows', qty: 20 });
+
             if ($$('#spells > .card, #spells > .border').length === 0)
                 addSpellRow({ name: 'Spell', type: 'attack' });
+
             if ($$('#resources > .card, #resources > .border').length === 0)
                 addResourceRow({ name: 'Feature Uses', max: 1 });
 
+            // Ensure at least one Feature row exists after hydrate/load
+            if (document.querySelectorAll('#featuresList .feature-row').length === 0)
+                addFeatureRow({});
+
             recalcAll();
         })();
+
     </script>
 </body>
 
