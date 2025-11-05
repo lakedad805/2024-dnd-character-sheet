@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>D&D 2024 — Minimal Character Sheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* ---------- Print ---------- */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                background: #fff;
+            }
+
+            .page {
+                box-shadow: none !important;
+            }
+        }
+
+        /* ---------- Layout system (compact & consistent) ---------- */
+        :root {
+            --sheet-base: 14px;
+            /* global scale: 14–16 looks best */
+            --sheet-line: 1.25;
+            --ctl-h: 2.25rem;
+            /* unified control height */
+            --ctl-px: .625rem;
+            /* control horizontal padding */
+            --card-bg: #ffffff;
+            --card-bd: #e5e7eb;
+            /* slate-200 */
+            --pill-bg: #f8fafc;
+            /* slate-50 */
+        }
+
+        .page {
+            font-size: var(--sheet-base);
+            line-height: var(--sheet-line);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-bd);
+            border-radius: .75rem;
+            /* rounded-xl feel */
+            padding: .75rem;
+            /* p-3 default; adjusted responsively below */
+        }
+
+        @media (min-width:768px) {
+            .card {
+                padding: .875rem;
+            }
+
+            /* md:p-3.5 */
+        }
+
+        /* Labels */
+        .field-label {
+            display: block;
+            font-size: .72rem;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: #64748b;
+            /* slate-500 */
+            line-height: 1.1;
+            margin-bottom: .25rem;
+        }
+
+        /* Inputs/selects unified sizing (except checkboxes) */
+        .page input:not([type="checkbox"]),
+        .page select {
+            height: var(--ctl-h);
+            padding: 0 var(--ctl-px);
+            border: 1px solid var(--card-bd);
+            border-radius: .5rem;
+            font-size: .9rem;
+            line-height: 1.1;
+            width: 100%;
+        }
+
+        .page input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        .page input[type="number"]::-webkit-outer-spin-button,
+        .page input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Textareas */
+        .page textarea {
+            width: 100%;
+            border: 1px solid var(--card-bd);
+            border-radius: .5rem;
+            padding: .5rem .625rem;
+            font-size: .9rem;
+            line-height: 1.25;
+            min-height: 8rem;
+        }
+
+        /* KPI pill (readouts like PB, Calculated, etc.) */
+        .kpi {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: var(--ctl-h);
+            padding: 0 .625rem;
+            border-radius: .5rem;
+            background: var(--pill-bg);
+            border: 1px solid var(--card-bd);
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Utility: prevent wrapping/overflow in tight spots */
+        .nowrap {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Make grid/flex children shrink instead of forcing overflow */
+        .grid>*,
+        .flex>* {
+            min-width: 0;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-100 text-slate-900">
+    <div class="max-w-5xl mx-auto p-4">
+        <div class="page bg-white rounded-2xl shadow p-4 md:p-6">
+            <!-- Header -->
+            <header class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                <div class="space-y-1.5">
+                    <h1 class="text-2xl font-bold">Minimal Character Sheet — D&D 2024</h1>
+                    <p class="text-sm text-slate-600">Auto-calcs; spells toggle; ammo tracking. Offline single file.</p>
+                </div>
+                <div class="no-print flex flex-wrap gap-2 items-center">
+                    <button id="saveBtn" class="px-3 py-1.5 rounded-lg bg-slate-900 text-white">Save</button>
+                    <button id="resetBtn" class="px-3 py-1.5 rounded-lg bg-slate-200">Reset</button>
+                    <button id="exportBtn" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white">Export JSON</button>
+                    <label class="px-3 py-1.5 rounded-lg bg-sky-600 text-white cursor-pointer">
+                        Import JSON<input id="importFile" type="file" accept="application/json" class="hidden" />
+                    </label>
+                    <button onclick="window.print()"
+                        class="px-3 py-1.5 rounded-lg bg-slate-700 text-white">Print</button>
+                </div>
+            </header>
+
+            <hr class="my-4" />
+
+            <!-- Identity -->
+            <section class="grid md:grid-cols-3 gap-4">
+                <div class="card">
+                    <label for="name" class="field-label">Character Name</label>
+                    <input id="name" />
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="card">
+                        <label for="class" class="field-label">Class</label>
+                        <input id="class" />
+                    </div>
+                    <div class="card">
+                        <label for="level" class="field-label">Level</label>
+                        <input id="level" type="number" min="1" max="20" value="1" />
+                    </div>
+                    <div class="card">
+                        <label for="background" class="field-label">Background</label>
+                        <input id="background" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="card">
+                        <label for="species" class="field-label">Species</label>
+                        <input id="species" />
+                    </div>
+                    <div class="card">
+                        <label for="player" class="field-label">Player</label>
+                        <input id="player" />
+                    </div>
+                    <div class="card">
+                        <label for="alignment" class="field-label">Alignment</label>
+                        <input id="alignment" />
+                    </div>
+                </div>
+            </section>
+
+            <hr class="my-4" />
+
+            <!-- Core -->
+            <section class="grid md:grid-cols-4 gap-4">
+                <!-- Abilities -->
+                <div class="md:col-span-2 grid grid-cols-6 gap-3">
+                    <template id="abilityCardTpl">
+                        <div class="card text-center">
+                            <div class="field-label abbr !mb-1">STR</div>
+                            <input type="number" class="score text-center font-semibold" value="10" />
+                            <div class="text-xs text-slate-600 mt-1">mod <span class="mod font-medium">+0</span></div>
+                        </div>
+                    </template>
+                    <div id="abilities" class="contents"></div>
+                </div>
+
+                <!-- PB / AC / Init / HP -->
+                <div class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="card text-center">
+                            <div class="field-label">Proficiency</div>
+                            <div id="pb" class="kpi nowrap">+2</div>
+                        </div>
+                        <div class="card text-center">
+                            <label class="field-label">Inspiration</label>
+                            <input id="inspiration" type="checkbox" class="w-5 h-5 align-middle" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="card text-center">
+                            <label for="ac" class="field-label">AC</label>
+                            <input id="ac" type="number" value="10" class="text-center font-semibold" />
+                        </div>
+                        <div class="card text-center">
+                            <label class="field-label">Initiative</label>
+                            <div id="initiative" class="kpi">+0</div>
+                            <div class="text-xs text-slate-500 mt-1">misc
+                                <input id="initMisc" type="number" value="0"
+                                    class="inline-block w-16 ml-1 text-center" />
+                            </div>
+                        </div>
+                        <div class="card text-center">
+                            <label for="speed" class="field-label">Speed</label>
+                            <input id="speed" type="number" value="30" class="text-center font-semibold" />
+                            <div class="text-xs text-slate-500 mt-1">ft.</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="card text-center">
+                            <label for="hpMax" class="field-label">Max HP</label>
+                            <input id="hpMax" type="number" value="10" class="text-center font-semibold" />
+                        </div>
+                        <div class="card text-center">
+                            <label for="hpCur" class="field-label">Current HP</label>
+                            <input id="hpCur" type="number" value="10" class="text-center font-semibold" />
+                        </div>
+                        <div class="card text-center">
+                            <label for="hpTemp" class="field-label">Temp HP</label>
+                            <input id="hpTemp" type="number" value="0" class="text-center font-semibold" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Saves & Passives -->
+                <div class="space-y-3">
+                    <div class="card">
+                        <div class="field-label mb-2">Saving Throws</div>
+                        <div id="saves" class="space-y-1"></div>
+                    </div>
+                    <div class="card">
+                        <div class="field-label mb-2">Passives</div>
+                        <div class="text-sm grid grid-cols-1 gap-1">
+                            <div>Passive Perception: <span id="pp">10</span></div>
+                            <div>Passive Insight: <span id="pi">10</span></div>
+                            <div>Passive Investigation: <span id="pv">10</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="my-4" />
+
+            <!-- Skills -->
+            <section>
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">Skills</h2>
+                    <div class="text-xs text-slate-600">Toggle <strong>Prof</strong> / <strong>Expertise</strong></div>
+                </div>
+                <div id="skills" class="grid md:grid-cols-2 gap-3 mt-2"></div>
+            </section>
+
+            <hr class="my-4" />
+
+            <!-- Attacks -->
+            <section>
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">Attacks</h2>
+                    <button id="addAttack" class="no-print px-3 py-1.5 rounded-lg bg-slate-900 text-white">Add
+                        Attack</button>
+                </div>
+                <div id="attacks" class="mt-2 space-y-2"></div>
+            </section>
+
+            <hr class="my-4" />
+
+            <!-- Spellcasting -->
+            <section>
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">Spellcasting</h2>
+                    <button id="addSpell" class="no-print px-3 py-1.5 rounded-lg bg-slate-900 text-white">Add
+                        Spell</button>
+                </div>
+
+                <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div class="card text-center">
+                        <label for="spellAtk" class="field-label">Spell Attack Bonus</label>
+                        <input id="spellAtk" type="number" class="text-center font-semibold" value="5" />
+                    </div>
+                    <div class="card text-center">
+                        <label for="spellDC" class="field-label">Spell Save DC</label>
+                        <input id="spellDC" type="number" class="text-center font-semibold" value="13" />
+                    </div>
+                </div>
+
+                <div id="spells" class="mt-3 space-y-2"></div>
+            </section>
+
+            <!-- Ammunition -->
+            <section class="mt-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">Ammunition</h2>
+                    <button id="addAmmo" class="no-print px-3 py-1.5 rounded-lg bg-slate-900 text-white">Add
+                        Ammo</button>
+                </div>
+                <div id="ammo" class="mt-2 space-y-2"></div>
+            </section>
+
+            <hr class="my-4" />
+
+            <!-- Features & Resources -->
+            <section class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">Features & Traits</h2>
+                    <textarea id="features"></textarea>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold">Resources / Uses</h2>
+                        <button id="addResource"
+                            class="no-print px-3 py-1.5 rounded-lg bg-slate-900 text-white">Add</button>
+                    </div>
+                    <div id="resources" class="mt-2 space-y-2"></div>
+                </div>
+            </section>
+
+            <hr class="my-4" />
+
+            <!-- Equipment & Notes -->
+            <section class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">Equipment</h2>
+                    <textarea id="equipment"></textarea>
+                </div>
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">Notes</h2>
+                    <textarea id="notes"></textarea>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Templates -->
+    <template id="skillRowTpl">
+        <div class="card flex items-center justify-between gap-2">
+            <div class="text-sm">
+                <div class="font-medium name">Acrobatics</div>
+                <div class="text-xs text-slate-500 ability">DEX</div>
+            </div>
+            <div class="flex items-center gap-3">
+                <label class="text-xs flex items-center gap-1"><input class="prof" type="checkbox" /> Prof</label>
+                <label class="text-xs flex items-center gap-1"><input class="exp" type="checkbox" /> Expertise</label>
+                <div class="kpi w-12 justify-center bonus">+0</div>
+            </div>
+        </div>
+    </template>
+
+    <template id="saveRowTpl">
+        <div class="flex items-center justify-between text-sm">
+            <label class="flex items-center gap-2"><input class="prof" type="checkbox" /> <span
+                    class="name">Strength</span></label>
+            <div class="font-semibold bonus">+0</div>
+        </div>
+    </template>
+
+    <template id="attackRowTpl">
+        <div class="card">
+            <div class="grid md:grid-cols-8 gap-2 items-end">
+                <div class="md:col-span-2">
+                    <label class="field-label">Name</label>
+                    <input class="atk-name" placeholder="Longsword" />
+                </div>
+                <div>
+                    <label class="field-label">Ability</label>
+                    <select class="atk-ability">
+                        <option value="STR">STR</option>
+                        <option value="DEX">DEX</option>
+                        <option value="NONE">None</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Prof?</label>
+                    <input type="checkbox" class="atk-prof w-5 h-5" />
+                </div>
+                <div>
+                    <label class="field-label">Misc Hit</label>
+                    <input type="number" value="0" class="atk-misc text-center" />
+                </div>
+                <div class="text-center">
+                    <div class="field-label">To Hit</div>
+                    <div class="atk-tohit kpi">+0</div>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="field-label">Damage</label>
+                    <div class="flex items-center gap-2">
+                        <input class="atk-dice" placeholder="1d8" />
+                        <label class="text-xs flex items-center gap-1"><input class="atk-dmg-abil" type="checkbox"
+                                checked /> add ability</label>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1">Shown: <span class="atk-dmg-display font-medium">1d8 +
+                            0</span></div>
+                </div>
+                <div class="no-print flex justify-end">
+                    <button class="atk-delete px-3 py-1.5 rounded-lg bg-slate-200">Delete</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="spellRowTpl">
+        <div class="card">
+            <div class="grid md:grid-cols-8 gap-2 items-start">
+                <div class="md:col-span-2 min-w-0">
+                    <label class="field-label">Name</label>
+                    <input class="spl-name" placeholder="Guiding Bolt" />
+                </div>
+
+                <div class="min-w-0">
+                    <label class="field-label">Roll Type</label>
+                    <select class="spl-type">
+                        <option value="attack">Attack Roll</option>
+                        <option value="save">Saving Throw</option>
+                    </select>
+                </div>
+
+                <div class="save-fields min-w-0">
+                    <label class="field-label">Save Ability</label>
+                    <select class="spl-savetype">
+                        <option>STR</option>
+                        <option>DEX</option>
+                        <option>CON</option>
+                        <option>INT</option>
+                        <option>WIS</option>
+                        <option>CHA</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-2 min-w-0">
+                    <div class="field-label">Calculated</div>
+                    <div class="spl-calc kpi nowrap">—</div>
+                    <div class="text-xs text-slate-500 mt-1">Uses global values above</div>
+                </div>
+
+                <div class="md:col-span-8 min-w-0">
+                    <label class="field-label">Description / What it does</label>
+                    <textarea class="spl-notes" placeholder="Damage, riders, duration, scaling, etc."></textarea>
+                </div>
+
+                <div class="no-print flex justify-end md:col-span-8">
+                    <button class="spl-delete px-3 py-1.5 rounded-lg bg-slate-200">Delete</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="resourceRowTpl">
+        <div class="card flex items-center gap-2">
+            <input class="res-name" placeholder="Second Wind" />
+            <span class="text-xs text-slate-500">Uses:</span>
+            <input type="number" class="res-cur w-16 text-center" value="1" />
+            <span>/</span>
+            <input type="number" class="res-max w-16 text-center" value="1" />
+            <select class="res-recharge">
+                <option value="manual">manual</option>
+                <option value="short">short rest</option>
+                <option value="long">long rest</option>
+            </select>
+            <div class="ml-auto flex items-center gap-2 no-print">
+                <button class="res-reset px-2 py-1 rounded bg-slate-200">Reset</button>
+                <button class="res-delete px-2 py-1 rounded bg-slate-200">Delete</button>
+            </div>
+        </div>
+    </template>
+
+    <template id="ammoRowTpl">
+        <div class="card ammo-row">
+            <div class="grid md:grid-cols-8 gap-2 items-center">
+                <div class="md:col-span-3">
+                    <label class="field-label">Name</label>
+                    <input class="ammo-name" placeholder="Arrows" />
+                </div>
+                <div>
+                    <label class="field-label">Qty</label>
+                    <div class="flex items-center gap-2">
+                        <button class="ammo-dec px-2 py-1 rounded bg-slate-200">–</button>
+                        <input type="number" value="20" class="ammo-qty w-20 text-center" />
+                        <button class="ammo-inc px-2 py-1 rounded bg-slate-200">+</button>
+                    </div>
+                </div>
+                <div class="md:col-span-3">
+                    <label class="field-label">Notes</label>
+                    <input class="ammo-notes" placeholder="e.g., +1 arrows, recover on short rest" />
+                </div>
+                <div class="no-print flex justify-end">
+                    <button class="ammo-delete px-3 py-1.5 rounded-lg bg-slate-200">Delete</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        const LS_KEY = 'minimal_dnd2024_sheet_v2';
+        const abilOrder = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
+        const abilitiesCfg = {
+            STR: { name: 'Strength' }, DEX: { name: 'Dexterity' }, CON: { name: 'Constitution' },
+            INT: { name: 'Intelligence' }, WIS: { name: 'Wisdom' }, CHA: { name: 'Charisma' }
+        };
+        const skillsCfg = [
+            ['Acrobatics', 'DEX'], ['Animal Handling', 'WIS'], ['Arcana', 'INT'], ['Athletics', 'STR'],
+            ['Deception', 'CHA'], ['History', 'INT'], ['Insight', 'WIS'], ['Intimidation', 'CHA'],
+            ['Investigation', 'INT'], ['Medicine', 'WIS'], ['Nature', 'INT'], ['Perception', 'WIS'],
+            ['Performance', 'CHA'], ['Persuasion', 'CHA'], ['Religion', 'INT'], ['Sleight of Hand', 'DEX'],
+            ['Stealth', 'DEX'], ['Survival', 'WIS']
+        ];
+
+        const $ = s => document.querySelector(s);
+        const $$ = s => Array.from(document.querySelectorAll(s));
+        const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+        const mod = s => Math.floor((Number(s || 10) - 10) / 2);
+        const fmt = n => (n >= 0 ? '+' + n : '' + n);
+        const pbFromLevel = lvl => {
+            lvl = clamp(Number(lvl || 1), 1, 20);
+            if (lvl >= 17) return 6; if (lvl >= 13) return 5; if (lvl >= 9) return 4; if (lvl >= 5) return 3; return 2;
+        };
+
+        /* ---------- Build sections ---------- */
+        function buildAbilities() {
+            const host = $('#abilities'); host.innerHTML = '';
+            const tpl = $('#abilityCardTpl').content;
+            abilOrder.forEach((abbr, i) => {
+                const node = document.importNode(tpl, true);
+                node.querySelector('.abbr').textContent = abbr;
+                const input = node.querySelector('.score');
+                input.id = `score_${abbr}`;
+                input.value = i === 1 ? 14 : 10;
+                input.addEventListener('input', recalcAll);
+                node.querySelector('.mod').id = `mod_${abbr}`;
+                host.appendChild(node);
+            });
+        }
+        function buildSaves() {
+            const host = $('#saves'); host.innerHTML = '';
+            const tpl = $('#saveRowTpl').content;
+            abilOrder.forEach(ab => {
+                const n = document.importNode(tpl, true);
+                n.querySelector('.name').textContent = abilitiesCfg[ab].name;
+                n.querySelector('.prof').id = `save_prof_${ab}`;
+                n.querySelector('.prof').addEventListener('change', recalcAll);
+                n.querySelector('.bonus').id = `save_${ab}`;
+                host.appendChild(n);
+            });
+        }
+        function buildSkills() {
+            const host = $('#skills'); host.innerHTML = '';
+            const tpl = $('#skillRowTpl').content;
+            skillsCfg.forEach(([name, abil]) => {
+                const n = document.importNode(tpl, true);
+                n.querySelector('.name').textContent = name;
+                n.querySelector('.ability').textContent = abil;
+                const idKey = name.toLowerCase().replace(/[^a-z]+/g, '_');
+                const prof = n.querySelector('.prof'), exp = n.querySelector('.exp');
+                prof.id = `skill_prof_${idKey}`; exp.id = `skill_exp_${idKey}`;
+                prof.addEventListener('change', () => { if (!prof.checked) exp.checked = false; recalcAll(); });
+                exp.addEventListener('change', () => { if (exp.checked) prof.checked = true; recalcAll(); });
+                n.querySelector('.bonus').id = `skill_${idKey}`;
+                host.appendChild(n);
+            });
+        }
+
+        /* ---------- Row adders ---------- */
+        function addAttackRow(data = {}) {
+            const host = $('#attacks');
+            const node = document.importNode($('#attackRowTpl').content, true);
+            const row = node.firstElementChild;
+            row.querySelector('.atk-name').value = data.name || '';
+            row.querySelector('.atk-ability').value = data.ability || 'STR';
+            row.querySelector('.atk-prof').checked = !!data.prof;
+            row.querySelector('.atk-misc').value = data.misc || 0;
+            row.querySelector('.atk-dice').value = data.dice || '';
+            row.querySelector('.atk-dmg-abil').checked = data.dmgAbil !== false;
+            ['change', 'input'].forEach(ev => {
+                ['.atk-ability', '.atk-prof', '.atk-misc', '.atk-dice', '.atk-dmg-abil']
+                    .forEach(sel => row.querySelector(sel).addEventListener(ev, recalcAll));
+            });
+            host.appendChild(node); recalcAll();
+        }
+
+        function addSpellRow(data = {}) {
+            const host = $('#spells');
+            const node = document.importNode($('#spellRowTpl').content, true);
+            const row = node.firstElementChild;
+            const qs = s => row.querySelector(s);
+
+            qs('.spl-name').value = data.name || '';
+            qs('.spl-type').value = data.type || 'attack';
+            qs('.spl-savetype').value = data.saveType || 'DEX';
+            qs('.spl-notes').value = data.notes || '';
+
+            const saveFields = row.querySelectorAll('.save-fields');
+            function sync() {
+                const isAtk = qs('.spl-type').value === 'attack';
+                saveFields.forEach(el => el.style.display = isAtk ? 'none' : '');
+                recalcSpellcasting();
+            }
+            sync();
+
+            qs('.spl-type').addEventListener('change', () => { sync(); save && save(); });
+            ['.spl-name', '.spl-savetype', '.spl-notes'].forEach(sel => {
+                qs(sel).addEventListener('input', () => save && save());
+            });
+
+            host.appendChild(node);
+            recalcSpellcasting();
+        }
+
+        function addResourceRow(data = {}) {
+            const host = $('#resources');
+            const node = document.importNode($('#resourceRowTpl').content, true);
+            const row = node.firstElementChild;
+            row.querySelector('.res-name').value = data.name || '';
+            row.querySelector('.res-cur').value = data.cur ?? (data.max || 1);
+            row.querySelector('.res-max').value = data.max || 1;
+            row.querySelector('.res-recharge').value = data.recharge || 'manual';
+            row.querySelector('.res-reset').addEventListener('click', () => {
+                row.querySelector('.res-cur').value = row.querySelector('.res-max').value; save();
+            });
+            ['input', 'change'].forEach(ev => ['.res-name', '.res-cur', '.res-max', '.res-recharge']
+                .forEach(sel => row.querySelector(sel).addEventListener(ev, save)));
+            host.appendChild(node);
+        }
+
+        function addAmmoRow(data = {}) {
+            const host = $('#ammo');
+            const node = document.importNode($('#ammoRowTpl').content, true);
+            const row = node.firstElementChild;
+            row.querySelector('.ammo-name').value = data.name || '';
+            row.querySelector('.ammo-qty').value = data.qty ?? 20;
+            row.querySelector('.ammo-notes').value = data.notes || '';
+            ['input', 'change'].forEach(ev => ['.ammo-name', '.ammo-qty', '.ammo-notes']
+                .forEach(sel => row.querySelector(sel).addEventListener(ev, save)));
+            host.appendChild(node);
+        }
+
+        /* ---------- Calculations ---------- */
+        function recalcAll() {
+            const lvl = Number($('#level').value || 1);
+            const pb = pbFromLevel(lvl);
+            $('#pb').textContent = fmt(pb);
+
+            const mods = {};
+            abilOrder.forEach(ab => {
+                const s = Number(($(`#score_${ab}`) || {}).value || 10);
+                const m = mod(s); mods[ab] = m;
+                const el = $(`#mod_${ab}`); if (el) el.textContent = fmt(m);
+            });
+
+            const init = (mods.DEX || 0) + Number($('#initMisc').value || 0);
+            $('#initiative').textContent = fmt(init);
+
+            abilOrder.forEach(ab => {
+                const prof = (($(`#save_prof_${ab}`) || {}).checked) ? pb : 0;
+                const val = (mods[ab] || 0) + prof;
+                const el = $(`#save_${ab}`); if (el) el.textContent = fmt(val);
+            });
+
+            skillsCfg.forEach(([name, abil]) => {
+                const idKey = name.toLowerCase().replace(/[^a-z]+/g, '_');
+                const prof = (($(`#skill_prof_${idKey}`) || {}).checked) ? pb : 0;
+                const exp = (($(`#skill_exp_${idKey}`) || {}).checked) ? pb : 0;
+                const total = (mods[abil] || 0) + prof + exp;
+                const el = $(`#skill_${idKey}`); if (el) el.textContent = fmt(total);
+            });
+
+            $$('#attacks > .card, #attacks > .border').forEach(row => {
+                const abil = row.querySelector('.atk-ability').value;
+                const addAbil = row.querySelector('.atk-dmg-abil').checked;
+                const prof = row.querySelector('.atk-prof').checked ? pb : 0;
+                const misc = Number(row.querySelector('.atk-misc').value || 0);
+                const toHit = (abil === 'NONE' ? 0 : mods[abil]) + prof + misc;
+                row.querySelector('.atk-tohit').textContent = fmt(toHit);
+
+                const dice = (row.querySelector('.atk-dice').value || '').trim();
+                const dmgMod = addAbil && abil !== 'NONE' ? mods[abil] : 0;
+                row.querySelector('.atk-dmg-display').textContent = dice ? (dmgMod ? `${dice} ${fmt(dmgMod)}` : dice) : '-';
+            });
+
+            const getSkillBonus = name => Number(($(`#skill_${name}`) || {}).textContent || 0);
+            $('#pp').textContent = 10 + getSkillBonus('perception');
+            $('#pi').textContent = 10 + getSkillBonus('insight');
+            $('#pv').textContent = 10 + getSkillBonus('investigation');
+
+            save(false);
+        }
+
+        function recalcSpellcasting() {
+            const atk = Number((document.getElementById('spellAtk') || {}).value || 0);
+            const dc = Number((document.getElementById('spellDC') || {}).value || 10);
+            document.querySelectorAll('#spells > .card, #spells > .border').forEach(row => {
+                const type = row.querySelector('.spl-type')?.value || 'attack';
+                const out = row.querySelector('.spl-calc'); if (!out) return;
+                out.textContent = (type === 'attack') ? (atk >= 0 ? `+${atk}` : `${atk}`) : `DC ${dc}`;
+            });
+        }
+
+        /* ---------- Persistence ---------- */
+        function serialize() {
+            return {
+                meta: {
+                    name: $('#name').value, class: $('#class').value, level: Number($('#level').value || 1),
+                    background: $('#background').value, species: $('#species').value,
+                    player: $('#player').value, alignment: $('#alignment').value
+                },
+                abilities: Object.fromEntries(abilOrder.map(ab => [ab, Number(($(`#score_${ab}`) || {}).value || 10)])),
+                ac: Number($('#ac').value || 10), speed: Number($('#speed').value || 30),
+                initiativeMisc: Number($('#initMisc').value || 0), inspiration: $('#inspiration').checked,
+                hp: { max: Number($('#hpMax').value || 0), cur: Number($('#hpCur').value || 0), temp: Number($('#hpTemp').value || 0) },
+                saves: Object.fromEntries(abilOrder.map(ab => [ab, ($(`#save_prof_${ab}`) || {}).checked])),
+                skills: Object.fromEntries(skillsCfg.map(([n]) => {
+                    const key = n.toLowerCase().replace(/[^a-z]+/g, '_');
+                    return [key, { prof: ($(`#skill_prof_${key}`) || {}).checked, exp: ($(`#skill_exp_${key}`) || {}).checked }];
+                })),
+                attacks: $$('#attacks > .card, #attacks > .border').map(row => ({
+                    name: row.querySelector('.atk-name').value,
+                    ability: row.querySelector('.atk-ability').value,
+                    prof: row.querySelector('.atk-prof').checked,
+                    misc: Number(row.querySelector('.atk-misc').value || 0),
+                    dice: row.querySelector('.atk-dice').value,
+                    dmgAbil: row.querySelector('.atk-dmg-abil').checked
+                })),
+                spells: $$('#spells > .card, #spells > .border').map(row => ({
+                    name: row.querySelector('.spl-name').value,
+                    type: row.querySelector('.spl-type').value,
+                    saveType: row.querySelector('.spl-savetype')?.value || 'DEX',
+                    notes: row.querySelector('.spl-notes').value
+                })),
+                spellcasting: {
+                    atk: Number((document.getElementById('spellAtk') || {}).value || 0),
+                    dc: Number((document.getElementById('spellDC') || {}).value || 10)
+                },
+                ammo: $$('#ammo > .ammo-row').map(row => ({
+                    name: row.querySelector('.ammo-name').value,
+                    qty: Number(row.querySelector('.ammo-qty').value || 0),
+                    notes: row.querySelector('.ammo-notes').value
+                })),
+                resources: $$('#resources > .card, #resources > .border').map(row => ({
+                    name: row.querySelector('.res-name').value,
+                    cur: Number(row.querySelector('.res-cur').value || 0),
+                    max: Number(row.querySelector('.res-max').value || 0),
+                    recharge: row.querySelector('.res-recharge').value
+                })),
+                features: $('#features').value, equipment: $('#equipment').value, notes: $('#notes').value
+            };
+        }
+
+        function hydrate(obj) {
+            if (!obj) return;
+            $('#name').value = obj.meta?.name || ''; $('#class').value = obj.meta?.class || '';
+            $('#level').value = obj.meta?.level || 1; $('#background').value = obj.meta?.background || '';
+            $('#species').value = obj.meta?.species || ''; $('#player').value = obj.meta?.player || '';
+            $('#alignment').value = obj.meta?.alignment || '';
+            abilOrder.forEach(ab => { const v = obj.abilities?.[ab]; if (v != null) $(`#score_${ab}`).value = v; });
+            $('#ac').value = obj.ac ?? 10; $('#speed').value = obj.speed ?? 30;
+            $('#initMisc').value = obj.initiativeMisc ?? 0; $('#inspiration').checked = !!obj.inspiration;
+            $('#hpMax').value = obj.hp?.max ?? 0; $('#hpCur').value = obj.hp?.cur ?? 0; $('#hpTemp').value = obj.hp?.temp ?? 0;
+            abilOrder.forEach(ab => { const v = obj.saves?.[ab]; if (v != null) $(`#save_prof_${ab}`).checked = !!v; });
+            skillsCfg.forEach(([n]) => {
+                const key = n.toLowerCase().replace(/[^a-z]+/g, '_'); const s = obj.skills?.[key];
+                if (s) { $(`#skill_prof_${key}`).checked = !!s.prof; $(`#skill_exp_${key}`).checked = !!s.exp; }
+            });
+            $('#attacks').innerHTML = ''; (obj.attacks || []).forEach(addAttackRow);
+            $('#spells').innerHTML = ''; (obj.spells || []).forEach(addSpellRow);
+            $('#ammo').innerHTML = ''; (obj.ammo || []).forEach(addAmmoRow);
+            $('#resources').innerHTML = ''; (obj.resources || []).forEach(addResourceRow);
+            $('#features').value = obj.features || ''; $('#equipment').value = obj.equipment || ''; $('#notes').value = obj.notes || '';
+            recalcAll();
+            if (obj.spellcasting) {
+                (document.getElementById('spellAtk') || {}).value = obj.spellcasting.atk ?? 0;
+                (document.getElementById('spellDC') || {}).value = obj.spellcasting.dc ?? 10;
+            }
+            recalcSpellcasting();
+        }
+
+        function toast(msg) {
+            const el = document.createElement('div');
+            el.textContent = msg;
+            el.className = 'no-print fixed bottom-4 right-4 bg-slate-900 text-white px-3 py-1.5 rounded-lg shadow';
+            document.body.appendChild(el); setTimeout(() => el.remove(), 1100);
+        }
+        function save(showToast = true) {
+            try { localStorage.setItem(LS_KEY, JSON.stringify(serialize())); if (showToast) toast('Saved'); } catch (e) { console.error(e); }
+        }
+        function load() {
+            try { const raw = localStorage.getItem(LS_KEY); if (!raw) return; hydrate(JSON.parse(raw)); } catch (e) { console.error(e); }
+        }
+
+        function wireBasics() {
+            ['#name', '#class', '#level', '#background', '#species', '#player', '#alignment', '#ac', '#speed',
+                '#hpMax', '#hpCur', '#hpTemp', '#features', '#equipment', '#notes', '#initMisc', '#inspiration']
+                .forEach(sel => $(sel).addEventListener('input', () => { if (sel === '#level') recalcAll(); else save(); }));
+
+            $('#level').addEventListener('change', recalcAll);
+            $('#saveBtn').addEventListener('click', () => save(true));
+            $('#resetBtn').addEventListener('click', () => { localStorage.removeItem(LS_KEY); location.reload(); });
+            $('#exportBtn').addEventListener('click', () => {
+                const data = JSON.stringify(serialize(), null, 2);
+                const blob = new Blob([data], { type: 'application/json' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                a.download = `${($('#name').value || 'character').replace(/\s+/g, '_')}.json`; a.click(); URL.revokeObjectURL(a.href);
+            });
+            $('#importFile').addEventListener('change', (e) => {
+                const file = e.target.files[0]; if (!file) return;
+                const r = new FileReader();
+                r.onload = () => { try { hydrate(JSON.parse(r.result)); save(); toast('Imported'); } catch (err) { alert('Invalid JSON.'); } };
+                r.readAsText(file);
+            });
+
+            $('#addAttack').addEventListener('click', () => addAttackRow());
+            $('#addSpell').addEventListener('click', () => addSpellRow());
+            $('#addAmmo').addEventListener('click', () => addAmmoRow());
+            $('#addResource').addEventListener('click', () => addResourceRow());
+            document.getElementById('spellAtk').addEventListener('input', () => { recalcSpellcasting(); save(false); });
+            document.getElementById('spellDC').addEventListener('input', () => { recalcSpellcasting(); save(false); });
+        }
+
+        function wireDelegates() {
+            $('#attacks').addEventListener('click', e => {
+                const btn = e.target.closest('.atk-delete'); if (!btn) return;
+                const row = btn.closest('.card, .border'); if (row) { row.remove(); save(); }
+            });
+            $('#spells').addEventListener('click', e => {
+                const btn = e.target.closest('.spl-delete'); if (!btn) return;
+                const row = btn.closest('.card, .border'); if (row) { row.remove(); save(); }
+            });
+            $('#resources').addEventListener('click', e => {
+                const btn = e.target.closest('.res-delete'); if (!btn) return;
+                const row = btn.closest('.card, .border'); if (row) { row.remove(); save(); }
+            });
+            $('#ammo').addEventListener('click', e => {
+                const row = e.target.closest('.ammo-row'); if (!row) return;
+                if (e.target.closest('.ammo-delete')) { row.remove(); save(); return; }
+                if (e.target.closest('.ammo-dec')) { const q = row.querySelector('.ammo-qty'); q.value = Math.max(0, Number(q.value || 0) - 1); save(false); }
+                if (e.target.closest('.ammo-inc')) { const q = row.querySelector('.ammo-qty'); q.value = Number(q.value || 0) + 1; save(false); }
+            });
+        }
+
+        (function () {
+            buildAbilities(); buildSaves(); buildSkills();
+            wireBasics(); wireDelegates(); load(); recalcSpellcasting();
+
+            if ($$('#attacks > .card, #attacks > .border').length === 0)
+                addAttackRow({ name: 'Weapon', ability: 'STR', prof: true, dice: '1d8', dmgAbil: true });
+            if ($$('#spells > .card, #spells > .border').length === 0)
+                addSpellRow({ name: 'Spell', type: 'attack' });
+            if ($$('#ammo > .ammo-row').length === 0)
+                addAmmoRow({ name: 'Arrows', qty: 20 });
+            if ($$('#resources > .card, #resources > .border').length === 0)
+                addResourceRow({ name: 'Feature Uses', max: 1 });
+
+            recalcAll();
+        })();
+    </script>
+</body>
+
+</html>
