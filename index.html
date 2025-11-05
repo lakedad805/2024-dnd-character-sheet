@@ -636,7 +636,7 @@
             host.appendChild(node); recalcAll();
         }
 
-         function addAmmoRow(data = {}) {
+        function addAmmoRow(data = {}) {
             const host = $('#ammo');
             const node = document.importNode($('#ammoRowTpl').content, true);
             const row = node.firstElementChild;
@@ -692,7 +692,7 @@
             host.appendChild(node);
         }
 
-       
+
 
         /* ---------- Calculations ---------- */
         function recalcAll() {
@@ -902,10 +902,10 @@
 
             if ($$('#attacks > .card, #attacks > .border').length === 0)
                 addAttackRow({ name: 'Weapon', ability: 'STR', prof: true, dice: '1d8', dmgAbil: true });
-            if ($$('#spells > .card, #spells > .border').length === 0)
-                addSpellRow({ name: 'Spell', type: 'attack' });
             if ($$('#ammo > .ammo-row').length === 0)
                 addAmmoRow({ name: 'Arrows', qty: 20 });
+            if ($$('#spells > .card, #spells > .border').length === 0)
+                addSpellRow({ name: 'Spell', type: 'attack' });
             if ($$('#resources > .card, #resources > .border').length === 0)
                 addResourceRow({ name: 'Feature Uses', max: 1 });
 
